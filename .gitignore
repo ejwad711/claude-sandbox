@@ -1,0 +1,12 @@
+.env
+__pycache__/
+*.pyc
+
+# Cached API responses and generated reports contain PII / business data —
+# never committed. Re-derivable from GHL + Apify (fetch scripts) or from
+# ./cache (render script).
+cache/*.json
+reports/*.html
+reports/*.csv
+!cache/.gitkeep
+!reports/.gitkeep
