@@ -1,0 +1,15 @@
+{
+  "name": "story-journal",
+  "version": "1.0.0",
+  "description": "A journaling partner that reads entries against a want/conflict/decision story framework.",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.1",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1"
+  }
+}
