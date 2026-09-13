@@ -38,15 +38,9 @@ def contact_name(c: dict) -> str:
 
 
 def contact_address(c: dict) -> str:
-    """Best-effort address string.
-
-    NOTE: this is the GHL contact record's own address fields, and the
-    contact here is the listing agent, not the property. There is no
-    per-property address field in the verified schema (only listing_link,
-    which we already show separately) — treat this column as "agent's
-    address on file", not "property address", until/unless a real
-    property-address field is added.
-    """
+    """Property address — stored in the contact record's standard address
+    fields (address1/city/state/postalCode). Confirmed: this is the
+    property address, not the agent's own address."""
     parts = [c.get("address1"), c.get("city"), c.get("state"), c.get("postalCode")]
     joined = ", ".join(p for p in parts if p)
     return joined or ""
@@ -334,8 +328,7 @@ HTML_TEMPLATE = """<!doctype html>
   </div>
 
   <div class="footnote">
-    "Address" is the agent's contact record address on file (GHL has no per-property address field in this
-    schema) — not necessarily the property address; use the Zillow link to confirm. Days is age since
+    "Address" is the property address stored on the contact record. Days is age since
     offer_sent where present, else date_added_to_cold_offer, else the contact's GHL dateAdded — hover status
     cells for the exact source per row is not shown here, see the CSV for the age_source column.
   </div>
