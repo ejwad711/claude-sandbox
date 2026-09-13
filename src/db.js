@@ -144,9 +144,9 @@ function closeEntry(id, extraction) {
   const entry = data.entries.find((e) => e.id === id);
   if (!entry) throw new Error("entry not found");
   entry.status = "closed";
-  entry.extraction = extraction;
+  entry.extraction = extraction || null;
   save(data);
-  upsertThreadsFromExtraction(id, extraction);
+  if (extraction) upsertThreadsFromExtraction(id, extraction);
   return entry;
 }
 

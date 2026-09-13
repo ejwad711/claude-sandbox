@@ -30,11 +30,20 @@ Stored in `data/db.json` (gitignored): the raw entry text and the structured
 extraction are kept as separate fields per entry, per the brief's schema
 note, so the raw writing is never lost even if extraction is redone later.
 
+## AI features are optional
+
+`ANTHROPIC_API_KEY` is a separate, billed API key from the Anthropic
+Console — a Claude.ai/Claude Pro subscription does not include it. Without
+one set, the app still works as a plain journal: entries save immediately,
+onboarding is skipped, and Story Review says AI is off instead of erroring.
+Add the key to turn on the follow-up questions, structured extraction, and
+Story Review.
+
 ## Run it
 
 ```bash
 npm install
-cp .env.example .env   # add your ANTHROPIC_API_KEY
+cp .env.example .env   # optional: add ANTHROPIC_API_KEY to enable AI features
 npm start
 ```
 

@@ -38,7 +38,7 @@ async function loadState() {
 function renderJournal() {
   app.innerHTML = "";
 
-  if (!state.onboardingComplete) {
+  if (state.aiEnabled && !state.onboardingComplete) {
     return renderOnboarding();
   }
 
@@ -79,8 +79,25 @@ function renderOnboarding(step = 0, answers = {}) {
   input.focus();
 }
 
+function renderSaved() {
+  app.innerHTML = "";
+  app.appendChild(el("div", { class: "done-note", text: "Saved." }));
+  const btn = el("button", { class: "primary", text: "Write another entry" });
+  btn.addEventListener("click", () => renderNewEntry());
+  app.appendChild(btn);
+}
+
 function renderNewEntry() {
   const wrap = el("div");
+
+  if (!state.aiEnabled) {
+    wrap.appendChild(
+      el("div", {
+        class: "thread-prompt",
+        text: "AI features are off — entries just save. Add ANTHROPIC_API_KEY to your .env to turn on follow-up questions and the story review.",
+      })
+    );
+  }
 
   if (state.lastOpenThread) {
     const t = state.lastOpenThread;
@@ -102,7 +119,11 @@ function renderNewEntry() {
     try {
       const res = await api("/api/entries", { method: "POST", body: JSON.stringify({ raw_text: text }) });
       await loadState();
-      renderChat({ id: res.entryId, messages: [{ role: "user", content: text }, { role: "assistant", content: res.message }], status: res.done ? "closed" : "active" }, res.done);
+      if (!state.aiEnabled) {
+        renderSaved();
+      } else {
+        renderChat({ id: res.entryId, messages: [{ role: "user", content: text }, { role: "assistant", content: res.message }], status: res.done ? "closed" : "active" }, res.done);
+      }
     } catch (e) {
       err.textContent = e.message;
       btn.disabled = false;

@@ -11,6 +11,11 @@ const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
+// Claude Pro (claude.ai) does not include API access — AI features need a
+// separately billed ANTHROPIC_API_KEY. Without one, the app still works as
+// a plain journal: entries save, nothing calls Claude.
+const AI_ENABLED = !!process.env.ANTHROPIC_API_KEY;
+
 function buildSystemPrompt(isFirstSession) {
   let system = SESSION_SYSTEM_PROMPT;
   if (isFirstSession) {
@@ -30,6 +35,7 @@ app.get("/api/state", (req, res) => {
   const activeEntry = db.getActiveEntry();
   const lastOpenThread = db.getLastOpenThread();
   res.json({
+    aiEnabled: AI_ENABLED,
     onboardingComplete: !!onboarding,
     activeEntry: activeEntry
       ? { id: activeEntry.id, messages: activeEntry.messages, status: activeEntry.status }
@@ -57,6 +63,12 @@ app.post("/api/entries", async (req, res) => {
     }
     if (db.getActiveEntry()) {
       return res.status(409).json({ error: "a session is already in progress" });
+    }
+
+    if (!AI_ENABLED) {
+      const entry = db.createEntry(raw_text);
+      db.closeEntry(entry.id, null);
+      return res.json({ entryId: entry.id, message: "Saved.", done: true, aiEnabled: false });
     }
 
     const entry = db.createEntry(raw_text);
@@ -88,6 +100,9 @@ app.post("/api/entries", async (req, res) => {
 // POST /api/entries/:id/reply - continue an in-progress session
 app.post("/api/entries/:id/reply", async (req, res) => {
   try {
+    if (!AI_ENABLED) {
+      return res.status(400).json({ error: "AI features are off — add ANTHROPIC_API_KEY to enable follow-up questions" });
+    }
     const { text } = req.body || {};
     if (!text || !text.trim()) {
       return res.status(400).json({ error: "text is required" });
@@ -122,6 +137,12 @@ app.post("/api/entries/:id/reply", async (req, res) => {
 // GET /api/review - monthly story review over the last ~5 weeks
 app.get("/api/review", async (req, res) => {
   try {
+    if (!AI_ENABLED) {
+      return res.json({
+        text: "Story Review needs an Anthropic API key. Add ANTHROPIC_API_KEY to your .env to turn on AI features.",
+        aiEnabled: false,
+      });
+    }
     const since = new Date();
     since.setDate(since.getDate() - 35);
     const sinceDate = since.toISOString().slice(0, 10);
