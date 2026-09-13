@@ -67,6 +67,7 @@ def build_rows(contacts: list[dict], pipeline_index: dict, today: dt.date) -> tu
         "unmapped_pipeline_or_stage": {},
         "no_asking_price": 0,
         "no_offer": 0,
+        "zero_asking_price": [],
         "pipeline_distribution": {},
     }
 
@@ -117,6 +118,8 @@ def build_rows(contacts: list[dict], pipeline_index: dict, today: dt.date) -> tu
             my_offer = lib.to_number(lib.get_custom_field(c, lib.FIELD["offer_price"]))
         if asking_price is None:
             stats["no_asking_price"] += 1
+        elif asking_price == 0:
+            stats["zero_asking_price"].append({"contactId": c.get("id"), "name": contact_name(c)})
         if my_offer is None:
             stats["no_offer"] += 1
 
@@ -207,8 +210,16 @@ def print_terminal_summary(rows: list[dict], stats: dict) -> None:
     print(f"    contact.dateAdded (fallback):   {stats['age_source_counts']['contact.dateAdded']}")
     print(f"    no date at all:                 {stats['age_source_counts']['none']}")
     print(f"  ==> {fallback_rate:.0f}% of rows are NOT using offer_sent — ages for those rows are soft.")
-    print(f"\n  Rows with no asking_price:  {stats['no_asking_price']}")
-    print(f"  Rows with no offer amount:  {stats['no_offer']}")
+    no_opp_n = sum(1 for r in rows if r["bucket"] == "NO_OPPORTUNITY")
+    print(f"\n  Contacts with a listing_link but ZERO opportunities: {no_opp_n} ({no_opp_n/total_rows*100:.0f}% of the population) "
+          f"— these are leads that were never actually pushed into a pipeline stage.")
+    print(f"  Rows with no asking_price at all: {stats['no_asking_price']} ({stats['no_asking_price']/total_rows*100:.0f}%)")
+    print(f"  Rows with no offer amount at all: {stats['no_offer']} ({stats['no_offer']/total_rows*100:.0f}%)")
+    if stats["zero_asking_price"]:
+        print(f"  Rows with asking_price LITERALLY $0 (not missing — bad data, distinct from the above): "
+              f"{len(stats['zero_asking_price'])}")
+        for z in stats["zero_asking_price"]:
+            print(f"    {z['name']} ({z['contactId']})")
     if stats["unmapped_pipeline_or_stage"]:
         print(f"\n  Unmapped pipeline/stage ids seen (pipelines.json may be stale):")
         for k, n in stats["unmapped_pipeline_or_stage"].items():
